@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="WebDial: free browser-to-browser voice calls with a dialer pad, built on WebRTC.">
+  <meta name="theme-color" content="#0f766e">
+  <title>WebDial</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
+        WebDial
+      </div>
+      <div class="status" id="status" data-state="connecting">
+        <span class="dot" aria-hidden="true"></span>
+        <span id="status-text">Connecting…</span>
+      </div>
+    </header>
+
+    <section class="mycard" aria-label="Your number">
+      <div>
+        <div class="label">Your number</div>
+        <div class="mynumber" id="my-number">— — —</div>
+      </div>
+      <div class="mycard-actions">
+        <button type="button" class="chip" id="copy-number">Copy</button>
+        <button type="button" class="chip" id="share-link">Share link</button>
+      </div>
+    </section>
+
+    <main class="views">
+      <!-- Keypad -->
+      <section class="view active" id="view-keypad" aria-label="Keypad">
+        <div class="display">
+          <input id="dial-input" type="tel" autocomplete="off" placeholder="Enter number" aria-label="Number to call" maxlength="15">
+          <button type="button" class="icon-btn" id="backspace" aria-label="Delete digit (hold to clear)">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H7c-.7 0-1.2.35-1.6.9L0 12l5.4 8.1c.4.55.9.9 1.6.9h15a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-3 12.6L17.6 17 14 13.4 10.4 17 9 15.6 12.6 12 9 8.4 10.4 7 14 10.6 17.6 7 19 8.4 15.4 12z"/></svg>
+          </button>
+        </div>
+        <div class="contact-match" id="contact-match" aria-live="polite"></div>
+        <div class="keypad" id="keypad"></div>
+        <button type="button" class="call-btn" id="call-btn" aria-label="Call">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
+        </button>
+        <p class="hint">Tip: open this page in another tab or on another device, then dial the number shown there.</p>
+      </section>
+
+      <!-- Recents -->
+      <section class="view" id="view-recents" aria-label="Recent calls">
+        <div class="view-head">
+          <h2>Recents</h2>
+          <button type="button" class="chip" id="clear-recents">Clear</button>
+        </div>
+        <ul class="list" id="recents-list"></ul>
+        <p class="empty" id="recents-empty">No calls yet.</p>
+      </section>
+
+      <!-- Contacts -->
+      <section class="view" id="view-contacts" aria-label="Contacts">
+        <div class="view-head"><h2>Contacts</h2></div>
+        <form class="contact-form" id="contact-form" novalidate>
+          <input id="contact-name" type="text" placeholder="Name" maxlength="40" required aria-label="Contact name">
+          <input id="contact-number" type="tel" placeholder="Number" maxlength="10" required aria-label="Contact number">
+          <button type="submit" class="chip primary">Save</button>
+        </form>
+        <ul class="list" id="contacts-list"></ul>
+        <p class="empty" id="contacts-empty">No contacts saved.</p>
+      </section>
+    </main>
+
+    <nav class="tabs" role="tablist">
+      <button type="button" class="tab active" role="tab" aria-selected="true" data-view="keypad">Keypad</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" data-view="recents">Recents</button>
+      <button type="button" class="tab" role="tab" aria-selected="false" data-view="contacts">Contacts</button>
+    </nav>
+  </div>
+
+  <!-- Call screen -->
+  <div class="call-screen" id="call-screen" hidden role="dialog" aria-modal="true" aria-labelledby="call-peer-name">
+    <div class="call-top">
+      <div class="avatar" id="call-avatar" aria-hidden="true"></div>
+      <div class="call-peer-name" id="call-peer-name"></div>
+      <div class="call-peer-number" id="call-peer-number"></div>
+      <div class="call-status" id="call-status" aria-live="polite"></div>
+    </div>
+
+    <div class="incall-pad" id="incall-pad" hidden>
+      <div class="dtmf-display" id="dtmf-display"></div>
+      <div class="keypad small" id="incall-keypad"></div>
+    </div>
+
+    <div class="call-actions" id="active-actions">
+      <button type="button" class="round-btn" id="mute-btn" aria-pressed="false" aria-label="Mute">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11z"/></svg>
+        <span>Mute</span>
+      </button>
+      <button type="button" class="round-btn" id="pad-btn" aria-pressed="false" aria-label="Show keypad">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM6 1a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm12-8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm-6 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0-6a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-6 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm0-6a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>
+        <span>Keypad</span>
+      </button>
+      <button type="button" class="round-btn danger" id="hangup-btn" aria-label="Hang up">
+        <svg class="icon rot" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
+        <span>End</span>
+      </button>
+    </div>
+
+    <div class="call-actions" id="incoming-actions" hidden>
+      <button type="button" class="round-btn danger" id="decline-btn" aria-label="Decline">
+        <svg class="icon rot" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
+        <span>Decline</span>
+      </button>
+      <button type="button" class="round-btn accept" id="accept-btn" aria-label="Accept">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg>
+        <span>Accept</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <audio id="remote-audio" autoplay playsinline></audio>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

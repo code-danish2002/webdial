@@ -1,0 +1,29 @@
+{
+  "name": "webdial",
+  "version": "1.0.0",
+  "description": "Browser-to-browser voice calling app with a dialer pad, built on WebRTC and Socket.IO",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test \"test/**/*.test.js\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "webrtc",
+    "socket.io",
+    "voip",
+    "dialer",
+    "express"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.22.3",
+    "socket.io": "^4.8.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}
